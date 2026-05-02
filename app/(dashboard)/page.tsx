@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export default function Home() {
@@ -9,6 +10,9 @@ export default function Home() {
       <p className="text-lg text-secondary-700 dark:text-secondary-300">
         Gassssssssssssssss dev time
       </p>
+      <Button className="mt-4 w-full max-w-xs">
+        Order !
+      </Button>
     </div>
   );
 }
