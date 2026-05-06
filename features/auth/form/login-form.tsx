@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,30 +15,46 @@ import {
 } from "@/components/ui/field"
 
 import { loginSchema, type LoginInput } from "../schemas/login"
+import { useLogin } from "../hooks/use-auth"
 
 export function LoginForm() {
+  const searchParams = useSearchParams()
+  const justRegistered = searchParams.get("registered") === "true"
+
+  const { mutate: login, isPending, error } = useLogin()
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   })
 
-  async function onSubmit(data: LoginInput) {
-    // TODO: wire up auth API
-    console.log(data)
-  }
+  const onSubmit = (data: LoginInput) => login(data)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate>
-      <FieldSet>
+      <FieldSet disabled={isPending}>
+        {justRegistered && (
+          <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+            Account created — sign in to continue.
+          </p>
+        )}
+
+        {error && (
+          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error.message}
+          </p>
+        )}
+
         <FieldGroup>
           <Field data-invalid={!!errors.email}>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@example.com"
               aria-invalid={!!errors.email}
               {...register("email")}
@@ -50,6 +67,7 @@ export function LoginForm() {
             <Input
               id="password"
               type="password"
+              autoComplete="current-password"
               placeholder="••••••••"
               aria-invalid={!!errors.password}
               {...register("password")}
@@ -58,8 +76,13 @@ export function LoginForm() {
           </Field>
         </FieldGroup>
 
-        <Button type="submit" size="lg" className="mt-6 w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Signing in…" : "Sign in"}
+        <Button
+          type="submit"
+          size="lg"
+          className="mt-6 w-full"
+          disabled={isPending}
+        >
+          {isPending ? "Signing in…" : "Sign in"}
         </Button>
       </FieldSet>
     </form>
