@@ -1,0 +1,183 @@
+"use client"
+
+import { useState } from "react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmationModal } from "@/components/confirmation-modals"
+import { cn } from "@/lib/utils"
+
+import { useMenus, useDeleteMenu, useToggleAvailability } from "../hooks/use-menus"
+import { useCategories } from "../hooks/use-categories"
+import { MenuFormDialog } from "./menu-form-dialog"
+import type { Menu } from "../types"
+
+export function MenuSection() {
+  const [filterCategory, setFilterCategory] = useState("")
+  const { data: menus = [], isLoading } = useMenus(
+    filterCategory ? { categoryId: filterCategory } : undefined,
+  )
+  const { data: categories = [] } = useCategories()
+  const { mutate: deleteMenu, isPending: deleting } = useDeleteMenu()
+  const { mutate: toggle } = useToggleAvailability()
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Menu | undefined>()
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+
+  function openAdd() {
+    setEditTarget(undefined)
+    setFormOpen(true)
+  }
+
+  function openEdit(menu: Menu) {
+    setEditTarget(menu)
+    setFormOpen(true)
+  }
+
+  function categoryName(id: string) {
+    return categories.find((c) => c.id === id)?.name ?? "—"
+  }
+
+  function formatPrice(cents: number) {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(cents / 100)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="">All Categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <Button size="sm" onClick={openAdd}>
+          <Plus />
+          Add Menu Item
+        </Button>
+      </div>
+
+      <div className="rounded-lg border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Name</th>
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Category</th>
+              <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Price</th>
+              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Available</th>
+              <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
+                  <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
+                  <td className="px-4 py-3 text-right"><Skeleton className="ml-auto h-4 w-16" /></td>
+                  <td className="px-4 py-3 text-center"><Skeleton className="mx-auto h-5 w-12 rounded-full" /></td>
+                  <td className="px-4 py-3 text-right"><Skeleton className="ml-auto h-7 w-16" /></td>
+                </tr>
+              ))}
+
+            {!isLoading && menus.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                  No menu items yet. Add one to get started.
+                </td>
+              </tr>
+            )}
+
+            {menus.map((menu) => (
+              <tr key={menu.id} className="border-b last:border-0 hover:bg-muted/30">
+                <td className="px-4 py-3">
+                  <p className="font-medium">{menu.name}</p>
+                  {menu.description && (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground max-w-48">
+                      {menu.description}
+                    </p>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  {categoryName(menu.categoryId)}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums">
+                  {formatPrice(menu.price)}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() =>
+                      toggle({ id: menu.id, isAvailable: !menu.isAvailable })
+                    }
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset transition-colors",
+                      menu.isAvailable
+                        ? "bg-green-50 text-green-700 ring-green-600/20 hover:bg-green-100"
+                        : "bg-red-50 text-red-700 ring-red-600/20 hover:bg-red-100",
+                    )}
+                  >
+                    {menu.isAvailable ? "Available" : "Unavailable"}
+                  </button>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => openEdit(menu)}
+                    >
+                      <Pencil />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteTarget(menu.id)}
+                    >
+                      <Trash2 />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <MenuFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editTarget={editTarget}
+      />
+
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete menu item"
+        description="This will permanently delete the menu item."
+        confirmLabel="Delete"
+        isPending={deleting}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteMenu(deleteTarget, { onSuccess: () => setDeleteTarget(null) })
+          }
+        }}
+      />
+    </div>
+  )
+}

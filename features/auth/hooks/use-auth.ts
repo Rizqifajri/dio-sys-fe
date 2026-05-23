@@ -32,10 +32,34 @@ function deleteTokenCookie(name: string) {
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
 }
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")
+    return JSON.parse(atob(base64))
+  } catch {
+    return null
+  }
+}
+
 function persistSession(data: LoginData) {
   localStorage.setItem("access_token", data.accessToken)
   localStorage.setItem("refresh_token", data.refreshToken)
-  localStorage.setItem("user", JSON.stringify(data.user))
+
+  let user = data.user
+  if (!user) {
+    const payload = decodeJwtPayload(data.accessToken)
+    if (payload) {
+      user = {
+        id: (payload.sub ?? payload.id) as string,
+        email: payload.email as string,
+        name: payload.name as string,
+        tenantId: payload.tenantId as string,
+        scope: payload.scope as "GLOBAL" | "TENANT",
+      }
+    }
+  }
+
+  localStorage.setItem("user", JSON.stringify(user ?? null))
   setTokenCookie("access_token", data.accessToken)
 }
 
