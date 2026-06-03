@@ -11,7 +11,11 @@ export const categoryKeys = {
 export function useCategories() {
   return useQuery({
     queryKey: categoryKeys.all(),
-    queryFn: () => api.get<Category[]>("/categories"),
+    queryFn: () => {
+      const user = getStoredUser()
+      if (!user) throw new Error("Not authenticated")
+      return api.get<Category[]>("/categories")
+    },
   })
 }
 

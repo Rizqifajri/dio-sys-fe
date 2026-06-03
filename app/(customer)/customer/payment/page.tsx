@@ -1,11 +1,10 @@
-import { CustomerMenuPage } from "@/features/customer/pages/menu"
+import { CustomerPaymentPage } from "@/features/customer/pages/payment"
 import { Suspense } from "react"
-
 
 export default function Page() {
   return (
     <Suspense>
-      <CustomerMenuPage tenantId="1" />
+      <CustomerPaymentPage />
     </Suspense>
   )
 }

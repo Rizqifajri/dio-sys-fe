@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Plus, Trash2 } from "lucide-react"
+// Tambahkan import ImageIcon untuk fallback gambar kosong
+import { Pencil, Plus, Trash2, Image as ImageIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
+import { SearchBar } from "@/components/search-bar"
 import { cn } from "@/lib/utils"
 
 import { useMenus, useDeleteMenu, useToggleAvailability } from "../hooks/use-menus"
@@ -14,7 +16,9 @@ import { MenuFormDialog } from "./menu-form-dialog"
 import type { Menu } from "../types"
 
 export function MenuSection() {
+  const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState("")
+
   const { data: menus = [], isLoading } = useMenus(
     filterCategory ? { categoryId: filterCategory } : undefined,
   )
@@ -48,24 +52,36 @@ export function MenuSection() {
     }).format(cents / 100)
   }
 
+  const filteredMenus = menus.filter((menu) => {
+    if (!searchQuery) return true;
+    return menu.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="">All Categories</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 w-full sm:w-auto">
+          <SearchBar
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
 
-        <Button size="sm" onClick={openAdd}>
-          <Plus />
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="h-10 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 mb-[1px]"
+          >
+            <option value="">All Categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <Button size="sm" onClick={openAdd} className="mb-[1px]">
+          <Plus className="mr-2 h-4 w-4" />
           Add Menu Item
         </Button>
       </div>
@@ -74,6 +90,8 @@ export function MenuSection() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
+              {/* 1. Tambah Header Image */}
+              <th className="px-4 py-2.5 text-left font-medium text-muted-foreground w-16">Image</th>
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Name</th>
               <th className="px-4 py-2.5 text-left font-medium text-muted-foreground">Category</th>
               <th className="px-4 py-2.5 text-right font-medium text-muted-foreground">Price</th>
@@ -85,6 +103,8 @@ export function MenuSection() {
             {isLoading &&
               Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i} className="border-b last:border-0">
+                  {/* 2. Tambah Skeleton untuk Image */}
+                  <td className="px-4 py-3"><Skeleton className="h-10 w-10 rounded-md" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-36" /></td>
                   <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                   <td className="px-4 py-3 text-right"><Skeleton className="ml-auto h-4 w-16" /></td>
@@ -93,16 +113,31 @@ export function MenuSection() {
                 </tr>
               ))}
 
-            {!isLoading && menus.length === 0 && (
+            {!isLoading && filteredMenus.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                  No menu items yet. Add one to get started.
+                {/* 3. Ubah colSpan dari 5 menjadi 6 */}
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                  {searchQuery ? "No menu items match your search." : "No menu items yet. Add one to get started."}
                 </td>
               </tr>
             )}
 
-            {menus.map((menu) => (
+            {filteredMenus.map((menu) => (
               <tr key={menu.id} className="border-b last:border-0 hover:bg-muted/30">
+                {/* 4. Render Image dengan fallback */}
+                <td className="px-4 py-3">
+                  {menu.imageUrl ? (
+                    <img
+                      src={menu.imageUrl}
+                      alt={menu.name}
+                      className="h-10 w-10 rounded-md object-cover border bg-muted"
+                    />
+                  ) : (
+                    <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center border">
+                      <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium">{menu.name}</p>
                   {menu.description && (
@@ -139,7 +174,7 @@ export function MenuSection() {
                       variant="ghost"
                       onClick={() => openEdit(menu)}
                     >
-                      <Pencil />
+                      <Pencil className="h-4 w-4" />
                       <span className="sr-only">Edit</span>
                     </Button>
                     <Button
@@ -148,7 +183,7 @@ export function MenuSection() {
                       className="text-destructive hover:text-destructive"
                       onClick={() => setDeleteTarget(menu.id)}
                     >
-                      <Trash2 />
+                      <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>
                   </div>
