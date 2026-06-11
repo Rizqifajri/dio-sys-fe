@@ -6,7 +6,7 @@ export const createMenuSchema = z.object({
   description: z.string().max(500, "Max 500 characters").optional(),
   // User enters decimal (e.g. 12.50) — converted to cents in the hook
   price: z.coerce.number().positive("Price must be greater than 0"),
-  imageUrl: z.string().url("Enter a valid image URL").or(z.literal("")).optional(),
+  imageUrl: z.string().url().or(z.literal("")).optional(),
   isAvailable: z.boolean().default(true),
 })
 

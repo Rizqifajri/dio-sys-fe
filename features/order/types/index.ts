@@ -1,11 +1,11 @@
-export type OrderStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED"
+export type OrderStatus = "NEW" | "PROCESSING" | "COMPLETED" | "CANCELED"
 
 export type OrderItem = {
   id: string
   menuId: string
   menuName: string
   quantity: number
-  unitPrice: number
+  price: number
 }
 
 export type Order = {
@@ -15,7 +15,7 @@ export type Order = {
   tableName?: string
   status: OrderStatus
   items: OrderItem[]
-  totalAmount: number
+  totalPrice: number
   notes?: string
   createdAt: string
 }

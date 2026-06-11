@@ -20,6 +20,9 @@
 # production
 /build
 
+# user-uploaded menu images
+/public/uploads/menus/*
+
 # misc
 .DS_Store
 *.pem

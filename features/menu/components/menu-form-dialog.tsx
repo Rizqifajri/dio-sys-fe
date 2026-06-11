@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils"
 import { createMenuSchema, type CreateMenuValues } from "../schemas/menu"
 import { useCreateMenu, useUpdateMenu } from "../hooks/use-menus"
 import { useCategories } from "../hooks/use-categories"
+import { MenuImageField } from "./menu-image-field"
+import { uploadMenuImage } from "../lib/upload-menu-image"
 import type { Menu } from "../types"
 
 interface Props {
@@ -38,7 +40,10 @@ export function MenuFormDialog({ open, onOpenChange, editTarget }: Props) {
   const { mutate: create, isPending: creating } = useCreateMenu()
   const { mutate: update, isPending: updating } = useUpdateMenu()
   const { data: categories = [] } = useCategories()
-  const isPending = creating || updating
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imageError, setImageError] = useState<string | undefined>()
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const isPending = creating || updating || uploadingImage
 
   const {
     register,
@@ -57,22 +62,40 @@ export function MenuFormDialog({ open, onOpenChange, editTarget }: Props) {
         categoryId: editTarget.categoryId,
         description: editTarget.description ?? "",
         price: editTarget.price / 100,
-        imageUrl: editTarget.imageUrl ?? "",
         isAvailable: editTarget.isAvailable,
       })
     } else {
       reset({ isAvailable: true, price: undefined, categoryId: "" })
     }
+    setImageFile(null)
+    setImageError(undefined)
   }, [editTarget, open, reset])
 
-  function onSubmit(values: CreateMenuValues) {
+  async function onSubmit(values: CreateMenuValues) {
+    setImageError(undefined)
+    let imageUrl = editTarget?.imageUrl
+
+    if (imageFile) {
+      try {
+        setUploadingImage(true)
+        imageUrl = await uploadMenuImage(imageFile)
+      } catch (err) {
+        setImageError(err instanceof Error ? err.message : "Failed to upload image")
+        return
+      } finally {
+        setUploadingImage(false)
+      }
+    }
+
+    const payload = { ...values, imageUrl: imageUrl || undefined }
+
     if (isEdit) {
       update(
-        { id: editTarget.id, ...values },
+        { id: editTarget.id, ...payload },
         { onSuccess: () => onOpenChange(false) },
       )
     } else {
-      create(values, { onSuccess: () => onOpenChange(false) })
+      create(payload, { onSuccess: () => onOpenChange(false) })
     }
   }
 
@@ -144,17 +167,12 @@ export function MenuFormDialog({ open, onOpenChange, editTarget }: Props) {
                 <FieldError errors={[errors.price]} />
               </Field>
 
-              <Field data-invalid={!!errors.imageUrl}>
-                <FieldLabel htmlFor="menu-img">Image URL</FieldLabel>
-                <Input
-                  id="menu-img"
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  aria-invalid={!!errors.imageUrl}
-                  {...register("imageUrl")}
-                />
-                <FieldError errors={[errors.imageUrl]} />
-              </Field>
+              <MenuImageField
+                existingUrl={editTarget?.imageUrl}
+                disabled={isPending}
+                error={imageError}
+                onChange={setImageFile}
+              />
 
               <div className="flex items-center gap-2 pt-1">
                 <input

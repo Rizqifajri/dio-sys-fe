@@ -36,3 +36,13 @@ export function useUpdateOrderStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   })
 }
+
+export function useCreateTransaction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, paymentMethod = "cash" }: { orderId: string; paymentMethod?: string }) =>
+      api.post<{ id: string }>(`/transactions`, { orderId, paymentMethod }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  })
+}
+

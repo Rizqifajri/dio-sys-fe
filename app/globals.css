@@ -120,10 +120,12 @@
   * {
     @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
-    }
   html {
     @apply font-sans;
+    /* Slightly larger base (16px → 17px) so UI text scales up app-wide */
+    font-size: 125.25%;
+    }
+  body {
+    @apply bg-background text-foreground;
     }
 }
