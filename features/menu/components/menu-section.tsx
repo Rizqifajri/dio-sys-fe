@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
 import { SearchBar } from "@/components/search-bar"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 import { cn } from "@/lib/utils"
 
 import { useMenus, useDeleteMenu, useToggleAvailability } from "../hooks/use-menus"
@@ -15,7 +17,11 @@ import { useCategories } from "../hooks/use-categories"
 import { MenuFormDialog } from "./menu-form-dialog"
 import type { Menu } from "../types"
 
-export function MenuSection() {
+interface MenuSectionProps {
+  tenantId?: string | null
+}
+
+export function MenuSection({ tenantId }: MenuSectionProps = {}) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState("")
 
@@ -80,10 +86,12 @@ export function MenuSection() {
           </select>
         </div>
 
-        <Button size="sm" onClick={openAdd} className="mb-[1px]">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Menu Item
-        </Button>
+        <PermissionGuard permissions={PERMISSIONS.MENU_CREATE}>
+          <Button size="sm" onClick={openAdd} className="mb-[1px]">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Menu Item
+          </Button>
+        </PermissionGuard>
       </div>
 
       <div className="rounded-lg border">
@@ -169,23 +177,27 @@ export function MenuSection() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => openEdit(menu)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(menu.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <PermissionGuard permissions={PERMISSIONS.MENU_UPDATE}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => openEdit(menu)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={PERMISSIONS.MENU_DELETE}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(menu.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </td>
               </tr>
@@ -198,6 +210,7 @@ export function MenuSection() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editTarget={editTarget}
+        filterTenantId={tenantId}
       />
 
       <ConfirmationModal

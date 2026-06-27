@@ -27,14 +27,15 @@ export function useCategory(id: string) {
   })
 }
 
-export function useCreateCategory() {
+export function useCreateCategory(filterTenantId?: string | null) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (name: string) => {
       const user = getStoredUser()
       if (!user) throw new Error("Not authenticated")
-      return api.post<Category>("/categories", { tenantId: user.tenantId, name })
+      const tenantId = filterTenantId || user.tenantId
+      return api.post<Category>("/categories", { tenantId, name })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.all() })

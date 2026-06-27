@@ -6,12 +6,18 @@ import { Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 
 import { useCategories, useDeleteCategory } from "../hooks/use-categories"
 import { CategoryFormDialog } from "./category-form-dialog"
 import type { Category } from "../types"
 
-export function CategorySection() {
+interface CategorySectionProps {
+  tenantId?: string | null
+}
+
+export function CategorySection({ tenantId }: CategorySectionProps = {}) {
   const { data: categories = [], isLoading } = useCategories()
   const { mutate: deleteCategory, isPending: deleting } = useDeleteCategory()
 
@@ -33,10 +39,12 @@ export function CategorySection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Categories</h2>
-        <Button size="sm" onClick={openAdd}>
-          <Plus />
-          Add Category
-        </Button>
+        <PermissionGuard permissions={PERMISSIONS.CATEGORY_CREATE}>
+          <Button size="sm" onClick={openAdd}>
+            <Plus />
+            Add Category
+          </Button>
+        </PermissionGuard>
       </div>
 
       <div className="rounded-lg border">
@@ -69,23 +77,27 @@ export function CategorySection() {
                 <td className="px-4 py-3 font-medium">{category.name}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => openEdit(category)}
-                    >
-                      <Pencil />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(category.id)}
-                    >
-                      <Trash2 />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <PermissionGuard permissions={PERMISSIONS.CATEGORY_UPDATE}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => openEdit(category)}
+                      >
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={PERMISSIONS.CATEGORY_DELETE}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(category.id)}
+                      >
+                        <Trash2 />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </td>
               </tr>
@@ -98,6 +110,7 @@ export function CategorySection() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editTarget={editTarget}
+        filterTenantId={tenantId}
       />
 
       <ConfirmationModal

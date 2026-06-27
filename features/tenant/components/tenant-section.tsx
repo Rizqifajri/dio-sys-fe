@@ -6,6 +6,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 
 import { useTenants, useDeleteTenant } from "../hooks/use-tenants"
 import { TenantFormDialog } from "./tenant-form-dialog"
@@ -37,10 +39,12 @@ export function TenantSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Tenants</h2>
-        <Button size="sm" onClick={openAdd}>
-          <Plus />
-          Add Tenant
-        </Button>
+        <PermissionGuard permissions={PERMISSIONS.TENANT_CREATE}>
+          <Button size="sm" onClick={openAdd}>
+            <Plus />
+            Add Tenant
+          </Button>
+        </PermissionGuard>
       </div>
 
       <div className="rounded-lg border">
@@ -79,19 +83,23 @@ export function TenantSection() {
                 <td className="px-4 py-3 text-muted-foreground">{formatDate(tenant.createdAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
-                    <Button size="icon-sm" variant="ghost" onClick={() => openEdit(tenant)}>
-                      <Pencil />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleteTarget(tenant.id)}
-                    >
-                      <Trash2 />
-                      <span className="sr-only">Delete</span>
-                    </Button>
+                    <PermissionGuard permissions={PERMISSIONS.TENANT_UPDATE}>
+                      <Button size="icon-sm" variant="ghost" onClick={() => openEdit(tenant)}>
+                        <Pencil />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={PERMISSIONS.TENANT_DELETE}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteTarget(tenant.id)}
+                      >
+                        <Trash2 />
+                        <span className="sr-only">Delete</span>
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </td>
               </tr>

@@ -5,22 +5,29 @@ import type { RoleRecord } from "../types"
 
 export const roleKeys = {
   all: () => ["roles"] as const,
+  byTenant: (tenantId: string) => ["roles", "tenant", tenantId] as const,
   detail: (id: string) => ["roles", id] as const,
 }
 
-export function useRoles() {
+export function useRoles(tenantId?: string | null) {
   return useQuery({
-    queryKey: roleKeys.all(),
-    queryFn: () => api.get<RoleRecord[]>("/roles"),
+    queryKey: tenantId ? roleKeys.byTenant(tenantId) : roleKeys.all(),
+    queryFn: () => {
+      if (tenantId) {
+        return api.get<RoleRecord[]>(`/roles/tenant/${tenantId}`)
+      }
+      return api.get<RoleRecord[]>("/roles")
+    },
   })
 }
 
-export function useCreateRole() {
+export function useCreateRole(filterTenantId?: string | null) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: { name: string; scope: "TENANT" | "GLOBAL"; permissionIds: string[] }) => {
       const user = getStoredUser()
-      return api.post<RoleRecord>("/roles", { tenantId: user?.tenantId, ...payload })
+      const tenantId = filterTenantId || user?.tenantId
+      return api.post<RoleRecord>("/roles", { tenantId, ...payload })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: roleKeys.all() }),
   })

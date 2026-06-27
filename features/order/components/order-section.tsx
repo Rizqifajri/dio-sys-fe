@@ -4,6 +4,8 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 
 import { useOrders, useUpdateOrderStatus, useCreateTransaction } from "../hooks/use-orders"
 import type { Order, OrderStatus } from "../types"
@@ -53,35 +55,39 @@ function NextStatusButton({ order }: { order: Order }) {
 
   if (order.status === "NEW") {
     return (
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={isUpdating}
-        onClick={() => updateStatus({ id: order.id, status: "PROCESSING" })}
-      >
-        Process
-      </Button>
+      <PermissionGuard permissions={PERMISSIONS.ORDER_UPDATE}>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isUpdating}
+          onClick={() => updateStatus({ id: order.id, status: "PROCESSING" })}
+        >
+          Process
+        </Button>
+      </PermissionGuard>
     )
   }
   if (order.status === "PROCESSING") {
     return (
-      <Button
-        size="sm"
-        disabled={isUpdating || isPaying || isFinishing}
-        onClick={async () => {
-          setIsFinishing(true)
-          try {
-            await updateStatus({ id: order.id, status: "COMPLETED" })
-            await createTransaction({ orderId: order.id })
-          } catch (e) {
-            console.error("Failed to complete order and transaction", e)
-          } finally {
-            setIsFinishing(false)
-          }
-        }}
-      >
-        {isFinishing ? "Processing..." : "Pesanan Selesai"}
-      </Button>
+      <PermissionGuard permissions={PERMISSIONS.ORDER_UPDATE}>
+        <Button
+          size="sm"
+          disabled={isUpdating || isPaying || isFinishing}
+          onClick={async () => {
+            setIsFinishing(true)
+            try {
+              await updateStatus({ id: order.id, status: "COMPLETED" })
+              await createTransaction({ orderId: order.id })
+            } catch (e) {
+              console.error("Failed to complete order and transaction", e)
+            } finally {
+              setIsFinishing(false)
+            }
+          }}
+        >
+          {isFinishing ? "Processing..." : "Pesanan Selesai"}
+        </Button>
+      </PermissionGuard>
     )
   }
   return null
@@ -92,15 +98,17 @@ function CancelButton({ order }: { order: Order }) {
 
   if (order.status === "NEW" || order.status === "PROCESSING") {
     return (
-      <Button
-        size="sm"
-        variant="ghost"
-        className="text-destructive hover:text-destructive"
-        disabled={isPending}
-        onClick={() => updateStatus({ id: order.id, status: "CANCELED" })}
-      >
-        Cancel
-      </Button>
+      <PermissionGuard permissions={PERMISSIONS.ORDER_UPDATE}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          disabled={isPending}
+          onClick={() => updateStatus({ id: order.id, status: "CANCELED" })}
+        >
+          Cancel
+        </Button>
+      </PermissionGuard>
     )
   }
   return null

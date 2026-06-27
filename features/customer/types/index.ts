@@ -30,7 +30,7 @@ export type PublicMenuResponse = {
 }
 
 export type CreatePublicOrderPayload = {
-  tableId: string
+  tableId: string | null
   items: { menuId: string; quantity: number }[]
   customerName?: string
   customerPhone?: string

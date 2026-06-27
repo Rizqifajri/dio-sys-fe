@@ -97,23 +97,45 @@ async function tryRefreshToken(): Promise<string | null> {
     const refreshToken = localStorage.getItem("refresh_token")
     if (!refreshToken) return null
 
-    const res = await axios.post<ApiEnvelope<{ accessToken: string }>>(
+    const res = await axios.post<ApiEnvelope<{ accessToken: string; refreshToken: string }>>(
       `${BASE_URL}/auth/refresh`,
       { refreshToken }
     )
 
-    const newToken = res.data.data.accessToken
-    localStorage.setItem("access_token", newToken)
-    return newToken
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = res.data.data
+    
+    // Update both tokens in localStorage
+    localStorage.setItem("access_token", newAccessToken)
+    localStorage.setItem("refresh_token", newRefreshToken)
+    
+    // Update access_token cookie for middleware
+    setTokenCookie("access_token", newAccessToken)
+    
+    return newAccessToken
   } catch {
     return null
   }
+}
+
+function setTokenCookie(name: string, value: string, days = 7) {
+  if (typeof window === "undefined") return
+  const expires = new Date(Date.now() + days * 864e5).toUTCString()
+  const isSecure = window.location.protocol === "https:"
+  const secureFlag = isSecure ? "; Secure" : ""
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax${secureFlag}`
+}
+
+function deleteTokenCookie(name: string) {
+  if (typeof window === "undefined") return
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
 }
 
 export function clearSession() {
   if (typeof window === "undefined") return
   localStorage.removeItem("access_token")
   localStorage.removeItem("refresh_token")
+  localStorage.removeItem("user")
+  deleteTokenCookie("access_token")
 }
 
 

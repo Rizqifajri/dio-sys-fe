@@ -1,51 +1,95 @@
 import { useEffect, useState } from "react"
 import {
-  ROLE_PERMISSIONS,
   SCOPE_ROLE_MAP,
   type Permission,
   type Role,
 } from "@/constants/permissions"
 import { getStoredUser } from "./use-auth"
+import { useMe } from "./use-me"
 
-function resolvePermissions(): Permission[] {
+function getCachedPermissions(): Permission[] {
   const user = getStoredUser()
-  if (!user) return []
-  const role = SCOPE_ROLE_MAP[user.scope]
-  return role ? (ROLE_PERMISSIONS[role] ?? []) : []
+  if (!user || !user.permissions) return []
+  return user.permissions as Permission[]
 }
 
 /** Returns the current user's role derived from their API scope. */
-export function useUserRole(): Role | null {
-  const [role, setRole] = useState<Role | null>(null)
+export function useUserRole(): { role: Role | null; isLoading: boolean } {
+  const { data: meData, isLoading } = useMe()
+  const [cachedRole, setCachedRole] = useState<Role | null>(null)
 
   useEffect(() => {
     const user = getStoredUser()
-    setRole(user ? (SCOPE_ROLE_MAP[user.scope] ?? null) : null)
+    setCachedRole(user ? (SCOPE_ROLE_MAP[user.scope] ?? null) : null)
   }, [])
 
-  return role
+  const role = meData ? (SCOPE_ROLE_MAP[meData.scope] ?? null) : cachedRole
+
+  return { role, isLoading }
 }
 
 /** Returns all permissions the current user holds.
- *  Reads localStorage after hydration to avoid SSR mismatch. */
-export function useUserPermissions(): Permission[] {
-  const [permissions, setPermissions] = useState<Permission[]>([])
+ *  Fetches from API with localStorage as cache/fallback. */
+export function useUserPermissions(): {
+  permissions: Permission[]
+  isLoading: boolean
+  error: Error | null
+} {
+  const { data: meData, isLoading: apiLoading, error } = useMe()
+  const [cachedPermissions, setCachedPermissions] = useState<Permission[]>([])
+  const [cacheLoaded, setCacheLoaded] = useState(false)
 
+  // Load cached permissions from localStorage on mount
   useEffect(() => {
-    setPermissions(resolvePermissions())
+    setCachedPermissions(getCachedPermissions())
+    setCacheLoaded(true)
   }, [])
 
-  return permissions
+  // Use API data if available, otherwise use cache
+  const permissions =
+    (meData?.permissions as Permission[]) ?? cachedPermissions
+
+  // Keep loading state true until cache is loaded OR API returns data
+  // This prevents showing "Access Denied" before permissions are ready
+  const isLoading = !cacheLoaded || (apiLoading && cachedPermissions.length === 0)
+
+  return {
+    permissions,
+    isLoading,
+    error: error as Error | null,
+  }
 }
 
 /** Returns true if the user has ALL of the given permissions. */
-export function useHasPermission(...permissions: Permission[]): boolean {
-  const userPermissions = useUserPermissions()
-  return permissions.every((p) => userPermissions.includes(p))
+export function useHasPermission(
+  ...permissions: Permission[]
+): {
+  hasPermission: boolean
+  isLoading: boolean
+} {
+  const { permissions: userPermissions, isLoading } = useUserPermissions()
+
+  return {
+    hasPermission: isLoading
+      ? false
+      : permissions.every((p) => userPermissions.includes(p)),
+    isLoading,
+  }
 }
 
 /** Returns true if the user has ANY of the given permissions. */
-export function useHasAnyPermission(...permissions: Permission[]): boolean {
-  const userPermissions = useUserPermissions()
-  return permissions.some((p) => userPermissions.includes(p))
+export function useHasAnyPermission(
+  ...permissions: Permission[]
+): {
+  hasPermission: boolean
+  isLoading: boolean
+} {
+  const { permissions: userPermissions, isLoading } = useUserPermissions()
+
+  return {
+    hasPermission: isLoading
+      ? false
+      : permissions.some((p) => userPermissions.includes(p)),
+    isLoading,
+  }
 }

@@ -6,6 +6,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 import { cn } from "@/lib/utils"
 import type { ApiError } from "@/lib/api"
 import { useRoles } from "@/features/role/hooks/use-roles"
@@ -18,9 +20,13 @@ function formatDate(iso: string) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(new Date(iso))
 }
 
-export function UserSection() {
-  const { data: users = [], isLoading, isError, error } = useUsers()
-  const { data: roles = [] } = useRoles()
+interface UserSectionProps {
+  tenantId?: string | null
+}
+
+export function UserSection({ tenantId }: UserSectionProps = {}) {
+  const { data: users = [], isLoading, isError, error } = useUsers(tenantId)
+  const { data: roles = [] } = useRoles(tenantId)
   const { mutate: deleteUser, isPending: deleting } = useDeleteUser()
 
   const [formOpen, setFormOpen] = useState(false)
@@ -47,10 +53,12 @@ export function UserSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Users</h2>
-        <Button size="sm" onClick={openAdd}>
-          <Plus />
-          Add User
-        </Button>
+        <PermissionGuard permissions={PERMISSIONS.USER_MANAGE}>
+          <Button size="sm" onClick={openAdd}>
+            <Plus />
+            Add User
+          </Button>
+        </PermissionGuard>
       </div>
 
       <div className="rounded-lg border">
@@ -122,19 +130,23 @@ export function UserSection() {
                   <td className="px-4 py-3 text-muted-foreground text-xs">{formatDate(user.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <Button size="icon-sm" variant="ghost" onClick={() => openEdit(user)}>
-                        <Pencil />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteTarget(user.id)}
-                      >
-                        <Trash2 />
-                        <span className="sr-only">Delete</span>
-                      </Button>
+                      <PermissionGuard permissions={PERMISSIONS.USER_MANAGE}>
+                        <Button size="icon-sm" variant="ghost" onClick={() => openEdit(user)}>
+                          <Pencil />
+                          <span className="sr-only">Edit</span>
+                        </Button>
+                      </PermissionGuard>
+                      <PermissionGuard permissions={PERMISSIONS.USER_MANAGE}>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteTarget(user.id)}
+                        >
+                          <Trash2 />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </PermissionGuard>
                     </div>
                   </td>
                 </tr>
@@ -148,6 +160,7 @@ export function UserSection() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editTarget={editTarget}
+        filterTenantId={tenantId}
       />
 
       <ConfirmationModal

@@ -41,7 +41,7 @@ export function useMenu(id: string) {
   })
 }
 
-export function useCreateMenu() {
+export function useCreateMenu(filterTenantId?: string | null) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -51,7 +51,7 @@ export function useCreateMenu() {
 
       const payload: CreateMenuPayload = {
         ...values,
-        tenantId: user.tenantId,
+        tenantId: filterTenantId || user.tenantId,
         price: Math.round(values.price * 100), // decimal → cents
         imageUrl: values.imageUrl || undefined,
         description: values.description || undefined,

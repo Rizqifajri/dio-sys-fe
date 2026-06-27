@@ -4,6 +4,7 @@ export type RoleRecord = {
   name: string
   scope: "GLOBAL" | "TENANT"
   createdAt: string
+  permissions?: Array<{ id: string; name: string }>
 }
 
 export type PermissionRecord = {

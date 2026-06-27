@@ -5,22 +5,29 @@ import type { User } from "../types"
 
 export const userKeys = {
   all: () => ["users"] as const,
+  byTenant: (tenantId: string) => ["users", "tenant", tenantId] as const,
   detail: (id: string) => ["users", id] as const,
 }
 
-export function useUsers() {
+export function useUsers(tenantId?: string | null) {
   return useQuery({
-    queryKey: userKeys.all(),
-    queryFn: () => api.get<User[]>("/users"),
+    queryKey: tenantId ? userKeys.byTenant(tenantId) : userKeys.all(),
+    queryFn: () => {
+      if (tenantId) {
+        return api.get<User[]>(`/users/tenant/${tenantId}`)
+      }
+      return api.get<User[]>("/users")
+    },
   })
 }
 
-export function useCreateUser() {
+export function useCreateUser(filterTenantId?: string | null) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: { name: string; email: string; password: string; roleId: string }) => {
       const user = getStoredUser()
-      return api.post<User>("/users", { tenantId: user?.tenantId, ...payload })
+      const tenantId = filterTenantId || user?.tenantId
+      return api.post<User>("/users", { tenantId, ...payload })
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: userKeys.all() }),
   })

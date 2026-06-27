@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ConfirmationModal } from "@/components/confirmation-modals"
 import { PERMISSIONS } from "@/constants/permissions"
-import { useHasPermission } from "@/features/auth/hooks/use-permissions"
+import { useHasAnyPermission } from "@/features/auth/hooks/use-permissions"
 
 import type { ApiError } from "@/lib/api"
 
@@ -15,11 +15,15 @@ import { useRoles, useDeleteRole } from "../hooks/use-roles"
 import { RoleFormDialog } from "./role-form-dialog"
 import type { RoleRecord } from "../types"
 
-export function RoleSection() {
-  const { data: roles = [], isLoading, isError, error } = useRoles()
+interface RoleSectionProps {
+  tenantId?: string | null
+}
+
+export function RoleSection({ tenantId }: RoleSectionProps = {}) {
+  const { data: roles = [], isLoading, isError, error } = useRoles(tenantId)
   const apiError = error as ApiError | null
   const { mutate: deleteRole, isPending: deleting } = useDeleteRole()
-  const canManage = useHasPermission(PERMISSIONS.ROLE_CREATE)
+  const { hasPermission: canManage } = useHasAnyPermission(PERMISSIONS.ROLE_CREATE, PERMISSIONS.ROLE_MANAGE)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<RoleRecord | undefined>()
@@ -137,6 +141,7 @@ export function RoleSection() {
         open={formOpen}
         onOpenChange={setFormOpen}
         editTarget={editTarget}
+        filterTenantId={tenantId}
       />
 
       <ConfirmationModal

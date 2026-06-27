@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { LucideIcon } from "lucide-react"
@@ -8,6 +8,7 @@ import {
   BookOpen,
   Building2,
   LayoutDashboard,
+  Lock,
   LogOut,
   Package,
   ShieldCheck,
@@ -15,9 +16,11 @@ import {
   Monitor,
   User,
   Users,
+  LayoutGrid,
 } from "lucide-react"
 
 import { getStoredUser, useLogout } from "@/features/auth/hooks/use-auth"
+import { useMe } from "@/features/auth/hooks/use-me"
 import { useUserPermissions } from "@/features/auth/hooks/use-permissions"
 import { filterPermission } from "@/lib/filter-permission"
 import { PERMISSIONS, type Permission } from "@/constants/permissions"
@@ -35,6 +38,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface NavItem {
   title: string
@@ -62,19 +66,29 @@ const navGroups: NavGroup[] = [
     label: "Operations",
     scopes: ["TENANT"],
     items: [
-      { title: "POS Kasir", href: "/pos", icon: Monitor, permissions: [PERMISSIONS.ORDER_CREATE] },
-      { title: "Menu", href: "/menu", icon: BookOpen, permissions: [PERMISSIONS.MENU_READ] },
-      { title: "Inventory", href: "/inventory", icon: Package, permissions: [PERMISSIONS.MENU_READ] },
-      { title: "Order", href: "/order", icon: ShoppingCart, permissions: [PERMISSIONS.ORDER_READ] },
+      { title: "POS Kasir", href: "/pos", icon: Monitor, permissions: [PERMISSIONS.ORDER_MANAGE] },
+      { title: "Menu", href: "/menu", icon: BookOpen, permissions: [PERMISSIONS.MENU_MANAGE] },
+      { title: "Tables", href: "/tables", icon: LayoutGrid, permissions: [PERMISSIONS.TABLE_MANAGE] },
+      { title: "Inventory", href: "/inventory", icon: Package, permissions: [PERMISSIONS.MENU_MANAGE] },
+      { title: "Order", href: "/order", icon: ShoppingCart, permissions: [PERMISSIONS.ORDER_MANAGE] },
+    ],
+  },
+  {
+    label: "Team Management",
+    scopes: ["TENANT"],
+    items: [
+      { title: "Users", href: "/users", icon: Users, permissions: [PERMISSIONS.USER_MANAGE] },
+      { title: "Roles", href: "/roles", icon: ShieldCheck, permissions: [PERMISSIONS.ROLE_MANAGE] },
     ],
   },
   {
     label: "Administration",
     scopes: ["GLOBAL"],
     items: [
-      { title: "Users", href: "/users", icon: Users, permissions: [PERMISSIONS.USER_READ] },
-      { title: "Roles", href: "/roles", icon: ShieldCheck, permissions: [PERMISSIONS.ROLE_READ] },
-      { title: "Tenants", href: "/tenants", icon: Building2, permissions: [PERMISSIONS.TENANT_READ] },
+      { title: "Users", href: "/users", icon: Users, permissions: [PERMISSIONS.USER_MANAGE] },
+      { title: "Roles", href: "/roles", icon: ShieldCheck, permissions: [PERMISSIONS.ROLE_MANAGE] },
+      { title: "Permissions", href: "/permissions", icon: Lock, permissions: [PERMISSIONS.PERMISSION_MANAGE] },
+      { title: "Tenants", href: "/tenants", icon: Building2, permissions: [PERMISSIONS.TENANT_MANAGE] },
     ],
   },
 ]
@@ -83,8 +97,17 @@ export function AppSidebar() {
   const pathname = usePathname()
   const [showLogoutModal, setShowLogoutModal] = useState(false)
   const { mutate: logout, isPending } = useLogout()
-  const userPermissions = useUserPermissions()
-  const userScope = getStoredUser()?.scope
+  const { permissions: userPermissions } = useUserPermissions()
+  const { data: meData } = useMe()
+  const [userScope, setUserScope] = useState<"GLOBAL" | "TENANT" | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Load user scope from localStorage on mount for initial render (client-side only)
+  useEffect(() => {
+    const user = getStoredUser()
+    setUserScope(user?.scope ?? null)
+    setIsMounted(true)
+  }, [])
 
   const allowedGroups = navGroups
     .filter(
@@ -163,18 +186,26 @@ export function AppSidebar() {
 
         <SidebarFooter>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === "/account"}
-                tooltip="Account"
-              >
-                <Link href="/account">
-                  <User />
-                  <span>Account</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {/* User Info Display - Simple, non-clickable */}
+            {!isMounted || !meData ? (
+              <div className="flex items-center gap-3 px-2 py-2 mx-1 mb-1 rounded-md bg-muted/50">
+                <Skeleton className="size-8 rounded-md" />
+                <div className="flex flex-col gap-1 overflow-hidden group-data-[collapsible=icon]:hidden">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 px-2 py-2 mx-1 mb-1 rounded-md bg-muted/50">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-muted">
+                  <User className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none overflow-hidden group-data-[collapsible=icon]:hidden">
+                  <span className="text-sm font-medium truncate">{meData.name}</span>
+                  <span className="text-xs text-muted-foreground truncate">{meData.email}</span>
+                </div>
+              </div>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setShowLogoutModal(true)}

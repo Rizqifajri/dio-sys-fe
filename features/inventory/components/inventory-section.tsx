@@ -4,6 +4,8 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PermissionGuard } from "@/components/guards"
+import { PERMISSIONS } from "@/constants/permissions"
 
 import { useMenus, useToggleAvailability, useBulkAvailability } from "@/features/menu/hooks/use-menus"
 import { useCategories } from "@/features/menu/hooks/use-categories"
@@ -84,24 +86,28 @@ export function InventorySection() {
             <span className="text-sm text-muted-foreground">
               {selected.size} selected
             </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={bulking}
-              onClick={() => bulkSet(true)}
-              className="text-green-700 border-green-600/40 hover:bg-green-50"
-            >
-              Mark Available
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={bulking}
-              onClick={() => bulkSet(false)}
-              className="text-red-700 border-red-600/40 hover:bg-red-50"
-            >
-              Mark Unavailable
-            </Button>
+            <PermissionGuard permissions={PERMISSIONS.MENU_UPDATE}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulking}
+                onClick={() => bulkSet(true)}
+                className="text-green-700 border-green-600/40 hover:bg-green-50"
+              >
+                Mark Available
+              </Button>
+            </PermissionGuard>
+            <PermissionGuard permissions={PERMISSIONS.MENU_UPDATE}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulking}
+                onClick={() => bulkSet(false)}
+                className="text-red-700 border-red-600/40 hover:bg-red-50"
+              >
+                Mark Unavailable
+              </Button>
+            </PermissionGuard>
           </div>
         )}
       </div>
@@ -179,22 +185,24 @@ export function InventorySection() {
                   {formatPrice(menu.price)}
                 </td>
                 <td className="px-4 py-3 text-center">
-                  <button
-                    disabled={toggling}
-                    onClick={() => toggle({ id: menu.id, isAvailable: !menu.isAvailable })}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition-colors disabled:opacity-50",
-                      menu.isAvailable
-                        ? "bg-green-50 text-green-700 ring-green-600/20 hover:bg-green-100"
-                        : "bg-red-50 text-red-700 ring-red-600/20 hover:bg-red-100",
-                    )}
-                  >
-                    <span className={cn(
-                      "size-1.5 rounded-full",
-                      menu.isAvailable ? "bg-green-500" : "bg-red-500",
-                    )} />
-                    {menu.isAvailable ? "In Stock" : "Out of Stock"}
-                  </button>
+                  <PermissionGuard permissions={PERMISSIONS.MENU_UPDATE}>
+                    <button
+                      disabled={toggling}
+                      onClick={() => toggle({ id: menu.id, isAvailable: !menu.isAvailable })}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition-colors disabled:opacity-50",
+                        menu.isAvailable
+                          ? "bg-green-50 text-green-700 ring-green-600/20 hover:bg-green-100"
+                          : "bg-red-50 text-red-700 ring-red-600/20 hover:bg-red-100",
+                      )}
+                    >
+                      <span className={cn(
+                        "size-1.5 rounded-full",
+                        menu.isAvailable ? "bg-green-500" : "bg-red-500",
+                      )} />
+                      {menu.isAvailable ? "In Stock" : "Out of Stock"}
+                    </button>
+                  </PermissionGuard>
                 </td>
               </tr>
             ))}

@@ -14,6 +14,7 @@ export interface LoginData {
     name: string
     tenantId: string
     scope: "GLOBAL" | "TENANT"
+    permissions: string[]
   }
 }
 
@@ -25,7 +26,9 @@ export interface RegisterData {
 // ─── Cookie + Storage Helpers ─────────────────────────────────────────────────
 function setTokenCookie(name: string, value: string, days = 7) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict`
+  const isSecure = window.location.protocol === "https:"
+  const secureFlag = isSecure ? "; Secure" : ""
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax${secureFlag}`
 }
 
 function deleteTokenCookie(name: string) {
@@ -55,6 +58,7 @@ function persistSession(data: LoginData) {
         name: payload.name as string,
         tenantId: payload.tenantId as string,
         scope: payload.scope as "GLOBAL" | "TENANT",
+        permissions: (payload.permissions as string[]) ?? [],
       }
     }
   }
@@ -114,6 +118,24 @@ export function useLogout() {
     mutationFn: async () => clearSession(),
     onSuccess: () => {
       router.push("/login")
+    },
+  })
+}
+
+export function useRefreshSession() {
+  return useMutation<LoginData, ApiError, void>({
+    mutationFn: async () => {
+      const refreshToken = localStorage.getItem("refresh_token")
+      if (!refreshToken) {
+        throw new Error("No refresh token available")
+      }
+      return api.post<LoginData>("/auth/refresh", { refreshToken })
+    },
+    onSuccess: (data) => {
+      // Update session with new permissions
+      persistSession(data)
+      // Optionally reload the page to apply new permissions
+      window.location.reload()
     },
   })
 }

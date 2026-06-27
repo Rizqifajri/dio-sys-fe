@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
-import type { Order, OrderFilters, OrderStatus } from "../types"
+import type { Order, OrderFilters, OrderStatus, CreateOrderPayload } from "../types"
 
 export const orderKeys = {
   all: (filters?: OrderFilters) => ["orders", filters ?? null] as const,
@@ -25,6 +25,15 @@ export function useOrder(id: string) {
     queryKey: orderKeys.detail(id),
     queryFn: () => api.get<Order>(`/orders/${id}`),
     enabled: !!id,
+  })
+}
+
+export function useCreateOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateOrderPayload) =>
+      api.post<Order>("/orders", payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   })
 }
 

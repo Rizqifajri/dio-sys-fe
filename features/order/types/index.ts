@@ -24,3 +24,10 @@ export type OrderFilters = {
   status?: OrderStatus
   tableId?: string
 }
+
+export type CreateOrderPayload = {
+  tenantId: string
+  tableId?: string | null
+  customerId?: string
+  items: { menuId: string; quantity: number }[]
+}

@@ -29,11 +29,12 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   editTarget?: Category
+  filterTenantId?: string | null
 }
 
-export function CategoryFormDialog({ open, onOpenChange, editTarget }: Props) {
+export function CategoryFormDialog({ open, onOpenChange, editTarget, filterTenantId }: Props) {
   const isEdit = !!editTarget
-  const { mutate: create, isPending: creating } = useCreateCategory()
+  const { mutate: create, isPending: creating } = useCreateCategory(filterTenantId)
   const { mutate: update, isPending: updating } = useUpdateCategory()
   const isPending = creating || updating
 

@@ -33,11 +33,12 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   editTarget?: Menu
+  filterTenantId?: string | null
 }
 
-export function MenuFormDialog({ open, onOpenChange, editTarget }: Props) {
+export function MenuFormDialog({ open, onOpenChange, editTarget, filterTenantId }: Props) {
   const isEdit = !!editTarget
-  const { mutate: create, isPending: creating } = useCreateMenu()
+  const { mutate: create, isPending: creating } = useCreateMenu(filterTenantId)
   const { mutate: update, isPending: updating } = useUpdateMenu()
   const { data: categories = [] } = useCategories()
   const [imageFile, setImageFile] = useState<File | null>(null)

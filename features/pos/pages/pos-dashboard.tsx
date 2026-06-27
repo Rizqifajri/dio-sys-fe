@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { useCart } from "@/features/cart/context/cart-context"
 import { usePosMenus, usePosTables } from "../hooks/use-pos"
-import { useCreatePublicOrder } from "@/features/customer/hooks/use-public-order"
+import { useCreateOrder } from "@/features/order/hooks/use-orders"
 import { usePaymentCalculation } from "@/features/cart/hooks/use-payment-calculation"
+import { getStoredUser } from "@/features/auth/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Plus, Minus, ShoppingCart, CheckCircle2, User, Armchair, CreditCard } from "lucide-react"
@@ -12,7 +13,7 @@ import { Plus, Minus, ShoppingCart, CheckCircle2, User, Armchair, CreditCard } f
 export function PosDashboard() {
   const { data: menus = [], isLoading: loadingMenus } = usePosMenus()
   const { data: tables = [], isLoading: loadingTables } = usePosTables()
-  const { mutateAsync: createOrder } = useCreatePublicOrder()
+  const { mutateAsync: createOrder } = useCreateOrder()
 
   const { items, addItem, updateQuantity, clear, total, itemCount } = useCart()
   const { tax, service, totalPayment } = usePaymentCalculation(total)
@@ -36,10 +37,6 @@ export function PosDashboard() {
       alert("Keranjang masih kosong!")
       return
     }
-    if (!selectedTable) {
-      alert("Pilih meja terlebih dahulu!")
-      return
-    }
     if (!customerName.trim()) {
       alert("Nama pelanggan wajib diisi!")
       return
@@ -47,10 +44,29 @@ export function PosDashboard() {
 
     setIsProcessing(true)
     try {
+      // Filter out any invalid items and ensure menuId exists
+      const validItems = items.filter(i => i.menuId).map(i => ({ 
+        menuId: i.menuId, 
+        quantity: i.quantity 
+      }))
+
+      if (validItems.length === 0) {
+        alert("Item di keranjang tidak valid. Silakan hapus dan tambahkan kembali.")
+        setIsProcessing(false)
+        return
+      }
+
+      const user = getStoredUser()
+      if (!user?.tenantId) {
+        alert("Tenant tidak ditemukan. Silakan login ulang.")
+        setIsProcessing(false)
+        return
+      }
+
       const payload = {
-        tableId: selectedTable,
-        items: items.map(i => ({ menuId: i.menuId, quantity: i.quantity })),
-        customerName: `[PAID - ${paymentMethod.toUpperCase()}] ${customerName.trim()}`
+        tenantId: user.tenantId,
+        tableId: selectedTable || null,
+        items: validItems,
       }
       await createOrder(payload)
       setIsSuccess(true)
@@ -91,7 +107,7 @@ export function PosDashboard() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {menus.map((menu) => (
-              <div key={menu.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer flex flex-col" onClick={() => addItem(menu)}>
+              <div key={menu.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition cursor-pointer flex flex-col" onClick={() => addItem({ menuId: menu.id, name: menu.name, price: menu.price })}>
                 <div className="aspect-video bg-neutral-100 relative">
                   {menu.imageUrl ? (
                     <img src={menu.imageUrl} alt={menu.name} className="w-full h-full object-cover" />
@@ -113,9 +129,19 @@ export function PosDashboard() {
 
       {/* Right Pane: Cart & Checkout */}
       <div className="w-96 border-l bg-white flex flex-col shadow-xl z-10">
-        <div className="p-4 border-b flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5" />
-          <h2 className="font-bold text-lg">Keranjang ({itemCount})</h2>
+        <div className="p-4 border-b flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            <h2 className="font-bold text-lg">Keranjang ({itemCount})</h2>
+          </div>
+          {items.length > 0 && (
+            <button 
+              onClick={clear}
+              className="text-xs text-red-600 hover:text-red-700 font-medium"
+            >
+              Kosongkan
+            </button>
+          )}
         </div>
 
         {/* Cart Items */}
@@ -161,7 +187,7 @@ export function PosDashboard() {
                 value={selectedTable}
                 onChange={e => setSelectedTable(e.target.value)}
               >
-                <option value="" disabled>-- Pilih Meja --</option>
+                <option value="">Takeout / Walk-in (Tanpa Meja)</option>
                 {tables.map(t => (
                   <option key={t.id} value={t.id}>{t.name.replace(/meja/i, '').trim()} (Meja)</option>
                 ))}
