@@ -18,6 +18,7 @@ export interface Menu {
 }
 
 export interface MenuFilters {
+  tenantId?: string
   categoryId?: string
   isAvailable?: boolean
 }

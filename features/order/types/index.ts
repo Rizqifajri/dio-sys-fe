@@ -21,6 +21,7 @@ export type Order = {
 }
 
 export type OrderFilters = {
+  tenantId?: string
   status?: OrderStatus
   tableId?: string
 }

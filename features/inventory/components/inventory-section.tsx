@@ -18,14 +18,28 @@ function formatPrice(cents: number) {
   }).format(cents / 100)
 }
 
-export function InventorySection() {
+interface InventorySectionProps {
+  tenantId?: string | null
+}
+
+export function InventorySection({ tenantId }: InventorySectionProps) {
   const [filterCategory, setFilterCategory] = useState("")
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
+  // Build filters conditionally
+  const menuFilters: { tenantId?: string; categoryId?: string } = {}
+  if (tenantId) menuFilters.tenantId = tenantId
+  if (filterCategory) menuFilters.categoryId = filterCategory
+
+  const categoryFilters: { tenantId?: string } = {}
+  if (tenantId) categoryFilters.tenantId = tenantId
+
   const { data: menus = [], isLoading } = useMenus(
-    filterCategory ? { categoryId: filterCategory } : undefined,
+    Object.keys(menuFilters).length > 0 ? menuFilters : undefined,
   )
-  const { data: categories = [] } = useCategories()
+  const { data: categories = [] } = useCategories(
+    Object.keys(categoryFilters).length > 0 ? categoryFilters : undefined,
+  )
   const { mutate: toggle, isPending: toggling } = useToggleAvailability()
   const { mutate: bulk, isPending: bulking } = useBulkAvailability()
 

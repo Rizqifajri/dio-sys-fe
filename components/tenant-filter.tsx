@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useTenants } from "@/features/tenant/hooks/use-tenants"
+import { useMe } from "@/features/auth/hooks/use-me"
 
 interface TenantFilterProps {
   value: string | null
@@ -19,7 +20,13 @@ interface TenantFilterProps {
 }
 
 export function TenantFilter({ value, onChange, label = "Filter by Tenant" }: TenantFilterProps) {
+  const { data: user } = useMe()
   const { data: tenants = [], isLoading, isError } = useTenants()
+
+  // Hide filter for TENANT-scoped users (they only have 1 tenant, no need to filter)
+  if (user?.scope === "TENANT") {
+    return null
+  }
 
   if (isLoading) {
     return (

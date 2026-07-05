@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { api } from "@/lib/api"
+import { useMe } from "@/features/auth/hooks/use-me"
 import type { Tenant } from "../types"
 
 export const tenantKeys = {
@@ -8,9 +9,22 @@ export const tenantKeys = {
 }
 
 export function useTenants() {
+  const { data: user } = useMe()
+
   return useQuery({
     queryKey: tenantKeys.all(),
-    queryFn: () => api.get<Tenant[]>("/tenants"),
+    queryFn: async () => {
+      // GLOBAL users: fetch all tenants
+      if (user?.scope === "GLOBAL") {
+        return api.get<Tenant[]>("/tenants")
+      }
+      // TENANT users: fetch only their tenant
+      else {
+        const tenant = await api.get<Tenant>("/tenants/me")
+        return [tenant] // Return as array for consistency
+      }
+    },
+    enabled: !!user, // Only run when user data is available
   })
 }
 

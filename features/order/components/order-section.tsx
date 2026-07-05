@@ -114,48 +114,22 @@ function CancelButton({ order }: { order: Order }) {
   return null
 }
 
-function CustomerNameCell({ customerId }: { customerId?: string | null }) {
-  const [name, setName] = useState<string>("Unknown")
-  const { api } = require("@/lib/api")
-  
-  require("react").useEffect(() => {
-    if (customerId) {
-      api.get(`/customers/${customerId}`).then((res: any) => {
-        if (res?.name) setName(res.name)
-      }).catch(() => {})
-    } else {
-      setName("-")
-    }
-  }, [customerId, api])
 
-  return <span className="font-medium text-blue-600">{name}</span>
+interface OrderSectionProps {
+  tenantId?: string | null
 }
 
-function TableNameCell({ tableId }: { tableId?: string }) {
-  const [name, setName] = useState<string>("...")
-  const { api } = require("@/lib/api")
-  
-  require("react").useEffect(() => {
-    if (tableId) {
-      api.get(`/tables/${tableId}`).then((res: any) => {
-        if (res?.name) {
-          // Remove the word 'Meja' (case-insensitive) to only show the number
-          const cleanName = res.name.replace(/meja/i, '').trim()
-          setName(cleanName)
-        }
-      }).catch(() => setName(tableId.slice(-4)))
-    } else {
-      setName("-")
-    }
-  }, [tableId, api])
-
-  return <span>{name}</span>
-}
-
-export function OrderSection() {
+export function OrderSection({ tenantId }: OrderSectionProps = {}) {
   const [activeTab, setActiveTab] = useState<OrderStatus | "ALL">("ALL")
-  const filters = activeTab !== "ALL" ? { status: activeTab } : undefined
-  const { data: orders = [], isLoading } = useOrders(filters)
+  
+  // Build filters object conditionally
+  const filters = {
+    ...(tenantId ? { tenantId } : {}),
+    ...(activeTab !== "ALL" ? { status: activeTab } : {}),
+  }
+  const hasFilters = Object.keys(filters).length > 0
+
+  const { data: orders = [], isLoading } = useOrders(hasFilters ? filters : undefined)
 
   return (
     <div className="space-y-4">
@@ -219,10 +193,14 @@ export function OrderSection() {
                   #{order.id.slice(-6).toUpperCase()}
                 </td>
                 <td className="px-4 py-3 font-bold text-lg">
-                  <TableNameCell tableId={order.tableId} />
+                  <span className="text-2xl font-bold">
+                    {order.tableName ? order.tableName.replace(/meja/i, '').trim() : '-'}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
-                  <CustomerNameCell customerId={order.customerId} />
+                  <span className="font-medium text-blue-600">
+                    {order.customerName || 'Guest'}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {order.items.length} {order.items.length === 1 ? "item" : "items"}

@@ -10,6 +10,7 @@ export interface Table {
 }
 
 export interface TableFilters {
+  tenantId?: string
   status?: TableStatus
 }
 

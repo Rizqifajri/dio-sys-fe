@@ -38,8 +38,14 @@ export function TableSection({ tenantId }: TableSectionProps = {}) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTable, setEditingTable] = useState<Table | null>(null)
 
-  const filters = activeTab !== "ALL" ? { status: activeTab } : undefined
-  const { data: tables = [], isLoading } = useTables(filters)
+  // Build filters object conditionally
+  const filters = {
+    ...(tenantId ? { tenantId } : {}),
+    ...(activeTab !== "ALL" ? { status: activeTab } : {}),
+  }
+  const hasFilters = Object.keys(filters).length > 0
+
+  const { data: tables = [], isLoading } = useTables(hasFilters ? filters : undefined)
   const { mutateAsync: deleteTable, isPending: isDeleting } = useDeleteTable()
   const { mutateAsync: updateStatus } = useUpdateTableStatus()
 

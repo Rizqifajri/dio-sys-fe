@@ -18,7 +18,9 @@ interface CategorySectionProps {
 }
 
 export function CategorySection({ tenantId }: CategorySectionProps = {}) {
-  const { data: categories = [], isLoading } = useCategories()
+  const { data: categories = [], isLoading } = useCategories(
+    tenantId ? { tenantId } : undefined
+  )
   const { mutate: deleteCategory, isPending: deleting } = useDeleteCategory()
 
   const [formOpen, setFormOpen] = useState(false)

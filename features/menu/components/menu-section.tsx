@@ -25,10 +25,15 @@ export function MenuSection({ tenantId }: MenuSectionProps = {}) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategory, setFilterCategory] = useState("")
 
-  const { data: menus = [], isLoading } = useMenus(
-    filterCategory ? { categoryId: filterCategory } : undefined,
-  )
-  const { data: categories = [] } = useCategories()
+  // Build filters object conditionally
+  const menuFilters = {
+    ...(tenantId ? { tenantId } : {}),
+    ...(filterCategory ? { categoryId: filterCategory } : {}),
+  }
+  const hasFilters = Object.keys(menuFilters).length > 0
+
+  const { data: menus = [], isLoading } = useMenus(hasFilters ? menuFilters : undefined)
+  const { data: categories = [] } = useCategories(tenantId ? { tenantId } : undefined)
   const { mutate: deleteMenu, isPending: deleting } = useDeleteMenu()
   const { mutate: toggle } = useToggleAvailability()
 

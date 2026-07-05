@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 
+import { TenantFilter } from "@/components/tenant-filter"
 import { CategorySection } from "../components/category-section"
 import { MenuSection } from "../components/menu-section"
 
@@ -10,12 +11,16 @@ type Tab = (typeof TABS)[number]
 
 export function MenuPage() {
   const [tab, setTab] = useState<Tab>("Menu Items")
+  const [tenantId, setTenantId] = useState<string | null>(null)
 
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-xl font-semibold">Menu Management</h1>
-        <p className="text-sm text-muted-foreground">Manage your restaurant menu items and categories.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Menu Management</h1>
+          <p className="text-sm text-muted-foreground">Manage your restaurant menu items and categories.</p>
+        </div>
+        <TenantFilter value={tenantId} onChange={setTenantId} />
       </div>
 
       <div className="flex gap-1 border-b">
@@ -35,7 +40,7 @@ export function MenuPage() {
         ))}
       </div>
 
-      {tab === "Menu Items" ? <MenuSection /> : <CategorySection />}
+      {tab === "Menu Items" ? <MenuSection tenantId={tenantId} /> : <CategorySection tenantId={tenantId} />}
     </div>
   )
 }

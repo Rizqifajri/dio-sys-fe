@@ -3,18 +3,28 @@ import { api } from "@/lib/api"
 import { getStoredUser } from "@/features/auth/hooks/use-auth"
 import type { Category } from "../types"
 
+interface CategoryFilters {
+  tenantId?: string
+}
+
 export const categoryKeys = {
   all: () => ["categories"] as const,
+  list: (filters?: CategoryFilters) => ["categories", "list", filters] as const,
   detail: (id: string) => ["categories", id] as const,
 }
 
-export function useCategories() {
+export function useCategories(filters?: CategoryFilters) {
   return useQuery({
-    queryKey: categoryKeys.all(),
+    queryKey: categoryKeys.list(filters),
     queryFn: () => {
       const user = getStoredUser()
       if (!user) throw new Error("Not authenticated")
-      return api.get<Category[]>("/categories")
+      
+      const params = new URLSearchParams()
+      if (filters?.tenantId) params.append("tenantId", filters.tenantId)
+      
+      const query = params.toString()
+      return api.get<Category[]>(`/categories${query ? `?${query}` : ""}`)
     },
   })
 }

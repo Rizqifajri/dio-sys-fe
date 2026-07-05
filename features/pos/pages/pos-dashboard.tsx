@@ -37,8 +37,9 @@ export function PosDashboard() {
       alert("Keranjang masih kosong!")
       return
     }
-    if (!customerName.trim()) {
-      alert("Nama pelanggan wajib diisi!")
+    // Only require customer name for takeout/walk-in (no table selected)
+    if (!selectedTable && !customerName.trim()) {
+      alert("Nama pelanggan wajib untuk take-out!")
       return
     }
 
@@ -66,6 +67,7 @@ export function PosDashboard() {
       const payload = {
         tenantId: user.tenantId,
         tableId: selectedTable || null,
+        customerName: customerName.trim() || undefined,
         items: validItems,
       }
       await createOrder(payload)

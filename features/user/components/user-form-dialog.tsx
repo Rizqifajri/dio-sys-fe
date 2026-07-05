@@ -46,7 +46,7 @@ export function UserFormDialog({ open, onOpenChange, editTarget, filterTenantId 
   const isEdit = !!editTarget
   const { mutate: create, isPending: creating } = useCreateUser(filterTenantId)
   const { mutate: update, isPending: updating } = useUpdateUser()
-  const { data: roles = [] } = useRoles()
+  const { data: roles = [] } = useRoles(filterTenantId)
   const isPending = creating || updating
 
   const createForm = useForm<CreateUserValues>({
