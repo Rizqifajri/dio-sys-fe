@@ -1,6 +1,7 @@
 "use client"
 
 import { useForm } from "react-hook-form"
+import { Suspense } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSearchParams } from "next/navigation"
 
@@ -17,7 +18,7 @@ import {
 import { loginSchema, type LoginInput } from "../schemas/login"
 import { useLogin } from "../hooks/use-auth"
 
-export function LoginForm() {
+function LoginFormInner() {
   const searchParams = useSearchParams()
   const justRegistered = searchParams.get("registered") === "true"
 
@@ -86,5 +87,13 @@ export function LoginForm() {
         </Button>
       </FieldSet>
     </form>
+  )
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={<FieldSet disabled><div className="h-84.5" /></FieldSet>}>
+      <LoginFormInner />
+    </Suspense>
   )
 }
