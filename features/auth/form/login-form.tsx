@@ -77,14 +77,33 @@ function LoginFormInner() {
           </Field>
         </FieldGroup>
 
+        <div className="flex justify-end">
+          <a
+            href="/auth/forgot-password"
+            className="text-xs text-zinc-500 hover:text-zinc-600 hover:underline"
+          >
+            Forgot password?
+          </a>
+        </div>
+
         <Button
           type="submit"
           size="lg"
-          className="mt-6 w-full"
+          className="mt-6 w-full bg-black text-white hover:bg-black/90 cursor-pointer"
           disabled={isPending}
         >
           {isPending ? "Signing in…" : "Sign in"}
         </Button>
+
+        <p className="mt-4 text-center text-xs text-zinc-500">
+          Don’t have an account?{" "}
+          <a
+            href="/register"
+            className="font-medium text-black hover:underline"
+          >
+            Sign up
+          </a>
+        </p>
       </FieldSet>
     </form>
   )
@@ -92,7 +111,7 @@ function LoginFormInner() {
 
 export function LoginForm() {
   return (
-    <Suspense fallback={<FieldSet disabled><div className="h-84.5" /></FieldSet>}>
+    <Suspense fallback={<FieldSet disabled><div className="h-" /></FieldSet>}>
       <LoginFormInner />
     </Suspense>
   )

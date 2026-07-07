@@ -115,7 +115,7 @@ export function RegisterForm() {
         <Button
           type="submit"
           size="lg"
-          className="mt-6 w-full"
+          className="mt-6 w-full bg-black text-white hover:bg-black/90 cursor-pointer"
           disabled={isPending}
         >
           {isPending ? "Creating account…" : "Create account"}
