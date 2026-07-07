@@ -142,12 +142,12 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
                 <Link href="/dashboard">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
-                    D
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-black text-sidebar-primary-foreground font-bold text-sm">
+                    O
                   </div>
                   <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">DIO Systems</span>
-                    <span className="text-xs text-muted-foreground">Dashboard</span>
+                    <span className="font-semibold">ORYX</span>
+                    <span className="text-xs text-muted-foreground">Dashboard Management</span>
                   </div>
                 </Link>
               </SidebarMenuButton>
