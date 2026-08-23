@@ -114,15 +114,19 @@ export function MenuFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} className='sm:max-w-lg'>
+      <DialogContent 
+        showCloseButton={false} 
+        className='flex max-h-[90vh] w-[calc(100%-1rem)] flex-col gap-4 sm:max-w-lg md:max-w-xl'
+      >
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Edit Menu Item" : "Add Menu Item"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <FieldSet disabled={isPending}>
-            <FieldGroup>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className='flex flex-1 flex-col overflow-hidden'>
+          <div className='flex-1 overflow-y-auto px-1 -mx-1'>
+            <FieldSet disabled={isPending}>
+              <FieldGroup>
               <Field data-invalid={!!errors.name}>
                 <FieldLabel htmlFor='menu-name'>Name</FieldLabel>
                 <Input
@@ -197,9 +201,10 @@ export function MenuFormDialog({
                   Available
                 </label>
               </div>
-            </FieldGroup>
-          </FieldSet>
-          <DialogFooter className='mt-2'>
+              </FieldGroup>
+            </FieldSet>
+          </div>
+          <DialogFooter className='mt-2 shrink-0'>
             <Button
               type='button'
               variant='outline'
